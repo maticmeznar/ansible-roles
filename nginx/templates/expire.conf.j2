@@ -1,0 +1,4 @@
+location ~* \.({{nginx_static_file_expere_extensions}})$ {
+	expires {{nginx_static_file_expire_time}};
+	# add_header  Cache-Control public;
+}

@@ -1,0 +1,57 @@
+##
+# You should look at the following URL's in order to grasp a solid understanding
+# of Nginx configuration files in order to fully unleash the power of Nginx.
+# http://wiki.nginx.org/Pitfalls
+# http://wiki.nginx.org/QuickStart
+# http://wiki.nginx.org/Configuration
+#
+# Generally, you will want to move this file somewhere, and start with a clean
+# file but keep this around for reference. Or just disable in sites-enabled.
+#
+# Please see /usr/share/doc/nginx-doc/examples/ for more detailed examples.
+##
+
+server {
+	listen *:{{nginx_port}} default_server;
+	listen [::]:{{nginx_port}} default_server;
+	server_name {{nginx_server_name}};
+	root {{nginx_root}};
+
+	include conf.d/common.conf;
+	include conf.d/tryfiles.conf;
+
+	{% if nginx_php_enabled  == "yes" %}
+	include conf.d/php.conf;
+	{% endif %}
+
+	{% if nginx_static_file_expire_enabled  == "yes" %}
+	include conf.d/expire.conf;
+	{% endif %}
+
+}
+
+{% if nginx_ssl_enabled == "on" %}
+server {
+	listen *:443 ssl spdy default_server;
+	listen [::]:443 ssl default_server;
+	server_name {{nginx_server_name}};
+	root {{nginx_root}};
+	
+	include conf.d/common.conf;
+	include conf.d/tryfiles.conf;
+	
+	{% if nginx_php_enabled  == "yes" %}
+	include conf.d/php.conf;
+	{% endif %}
+
+	{% if nginx_static_file_expire_enabled  == "yes" %}
+	include conf.d/expire.conf;
+	{% endif %}
+	
+	include conf.d/ssl.conf;
+	ssl_certificate /etc/nginx/cert/ssl-public.pem;
+	ssl_certificate_key /etc/nginx/cert/ssl-private.pem;
+	
+	# add_header Strict-Transport-Security "max-age=15552001; includeSubDomains";
+}
+{% endif %}

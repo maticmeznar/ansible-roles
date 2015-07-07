@@ -1,2 +1,26 @@
 ---
-# defaults file for nginx
+
+nginx_fw_allowed_nets: ['0.0.0.0/0']
+nginx_port: 80
+nginx_server_name: "\"\""
+nginx_root: "/var/www/html"
+nginx_static_file_expire_enabled: "no"
+nginx_static_file_expire_time: "1h"
+nginx_static_file_expere_extensions: "css|js|ico|gif|jpg|png|txt"
+nginx_php_enabled: "yes"
+nginx_php_fastcgi_pass_path: "unix:/run/php-fpm/pool-www.sock"
+nginx_ssl_enabled: "on"
+nginx_ssl_dhparam_bits: 2048 # dhparam should be the same strength as your certificate (2048).
+nginx_ssl_buffer_size: "4k" # Default = 16k; Value reduced too minimize Time To First Byte.
+nginx_ssl_protocols: "TLSv1 TLSv1.1 TLSv1.2"
+nginx_ssl_ciphers: "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
+# https://timtaubert.de/blog/2014/11/the-sad-state-of-server-side-tls-session-resumption-implementations/
+# Sessions are evicted from cache based on LRU.
+nginx_ssl_session_cache: "shared:SSL:3M" # 1 MB can store about 4000 sessions. 250 B/session.
+# Sessions over 24h are not recommended for security reasons.
+# However, this setting does not purge sessions older than 24h, 
+# it only makes them invalid while they stay stored in memory. 
+# Daily server restart is necessary and recommended.
+nginx_ssl_session_timeout: "24h"
+nginx_ssl_cert_public_file: "ssl-public.pem"
+nginx_ssl_cert_private_file: "ssl-private.pem"

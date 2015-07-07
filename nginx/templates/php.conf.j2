@@ -1,0 +1,8 @@
+location ~ \.php$ {
+    fastcgi_pass {{nginx_php_fastcgi_pass_path}};
+    ## "fastcgi_params" don't work, use fastcgi.conf!
+    # include fastcgi_params;
+    include fastcgi.conf;
+    fastcgi_index index.php;
+    fastcgi_keep_conn on;
+    }

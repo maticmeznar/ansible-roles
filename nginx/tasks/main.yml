@@ -1,2 +1,55 @@
 ---
-# tasks file for nginx
+
+- name: Install nginx package on Debian OS family
+  apt: name={{ item }} state=present
+  with_items:
+    - [ 'nginx' ]
+  when: ansible_os_family == 'Debian'
+
+- name: Install nginx package on RedHat OS family
+  yum: name={{ item }} state=present
+  with_items:
+    - [ 'nginx' ]
+  when: ansible_os_family == 'RedHat'
+
+- file: path=/etc/nginx/{{ item }} state=directory owner=root mode=0775
+  with_items:
+  - [ 'vhost.d', 'conf.d', 'cert']
+
+- template: dest=/etc/nginx/nginx.conf owner=root group=root mode=0644 src=nginx.conf.j2
+  notify: reload nginx
+
+- template: dest=/etc/nginx/conf.d/{{item}}.conf owner=root mode=0664 src={{item}}.conf.j2
+  with_items:
+  - [ 'ssl', 'php', 'expire']
+  notify: reload nginx
+
+- copy: dest=/etc/nginx/conf.d/{{item}} owner=root mode=0664 src={{item}}
+  with_items:
+  - [ 'common.conf', 'tryfiles.conf', 'dhparam_2048.pem', 'dhparam_4096.pem' ]
+  notify: reload nginx
+
+- template: dest=/etc/nginx/conf.d/php.conf owner=root group=root mode=0664 src=php.conf.j2
+  when: nginx_php_enabled == "yes"
+  notify: reload nginx
+
+- template: dest=/etc/nginx/conf.d/expire.conf owner=root group=root mode=0664 src=expire.conf.j2
+  when: nginx_static_file_expire_enabled == "yes"
+  notify: reload nginx
+
+- template: dest=/etc/nginx/vhost.d/enabled-default.conf owner=root group=root mode=0664 src=enabled-default.conf.j2
+  notify: reload nginx
+
+# - name: Copy TLS certificates
+- copy: dest=/etc/nginx/cert/ssl-public.pem src={{nginx_ssl_cert_public_file}} owner=root group=root mode=0660
+- copy: dest=/etc/nginx/cert/ssl-private.pem src={{nginx_ssl_cert_private_file}} owner=root group=root mode=0660
+  
+# Fixes "avc:  denied  { execmem }" SELinux deny message
+- seboolean: name={{item}} persistent=yes state=yes
+  with_items:
+  - ['httpd_setrlimit', 'httpd_execmem', 'httpd_can_sendmail', 'httpd_enable_homedirs']
+  when: ansible_selinux == true
+  tags: selinux
+
+- name: start the nginx service
+  service: name=nginx state=started enabled=yes
