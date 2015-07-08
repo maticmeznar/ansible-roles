@@ -1,0 +1,105 @@
+---
+# tasks file for sysctl
+
+# If you set a key and later remove it, the key will persist in sysctl.conf file and be applied at every boot.
+#  https://www.kernel.org/doc/Documentation/sysctl/kernel.txt
+#  http://www.nateware.com/linux-network-tuning-for-2013.html (also look at sources at the bottom)
+
+# Circumventing conntracking is best either by disabling it per packet
+# with iptables or by blocking relavant kernel modules
+- name: Sysctl - conntrack
+  sysctl: name={{item.n}} value={{item.v}} sysctl_file=/etc/sysctl.d/10-ansible-conntrack.conf
+  with_items:
+  - {n: "net.netfilter.nf_conntrack_max", v: "100000"} # 100k
+    # Shorter connection tracking timeouts
+  - {n: "net.netfilter.nf_conntrack_tcp_timeout_established", v: "3600"} # Tighten further under heavy load
+  - {n: "net.netfilter.nf_conntrack_tcp_timeout_syn_recv", v: "5"} # SYN flood protection
+  - {n: "net.netfilter.nf_conntrack_tcp_timeout_syn_sent", v: "5"}
+  - {n: "net.netfilter.nf_conntrack_tcp_timeout_fin_wait", v: "10"}
+  - {n: "net.netfilter.nf_conntrack_tcp_timeout_close_wait", v: "10"}
+  - {n: "net.netfilter.nf_conntrack_tcp_timeout_time_wait", v: "20"}
+  - {n: "net.netfilter.nf_conntrack_udp_timeout", v: "5"}
+  - {n: "net.netfilter.nf_conntrack_icmp_timeout", v: "5"}
+
+- name: Sysctl - network
+  sysctl: name={{item.n}} value={{item.v}} sysctl_file=/etc/sysctl.d/10-ansible-network.conf
+  ignore_errors: yes # Because some of this settings will fail in containers.
+  with_items:
+  # https://www.kernel.org/doc/Documentation/networking/ip-sysctl.txt (networking)
+  #
+  # When tcp_syncookies is set, the kernel will handle TCP SYN packets normally until the half-open
+  # connection queue is full, at which time, the SYN cookie functionality kicks in. SYN
+  # cookies work by not using the SYN queue at all. Instead, the kernel simply replies to the
+  # SYN with a SYN|ACK, but will include a specially crafted TCP sequence number that
+  # encodes the source and destination IP address and port number and the time the packet
+  # was sent. A legitimate connection would send the ACK packet of the three way handshake
+  # with the specially crafted sequence number. This allows the server to verify that it has
+  # received a valid response to a SYN cookie and allow the connection, even though there is no
+  # corresponding SYN in the queue.
+  - {n: "net.ipv4.tcp_syncookies", v: "1"} # SYN flood protection
+  - {n: "net.ipv4.tcp_ecn", v: "0"} # Might some network equipment to drop packages. Perhaps set this=1 only on internal servers that dont communicate with external ones.
+  - {n: "net.ipv4.tcp_early_retrans", v: "3"} # http://lwn.net/Articles/542642/ - Default is "3"
+  - {n: "net.ipv4.tcp_limit_output_bytes", v: "131072"} # https://lwn.net/Articles/507065/ - Default is "131072". Benchmark with different options.
+  - {n: "net.ipv4.conf.all.rp_filter", v: "1"} # Enable Reverse Path Filtering
+  - {n: "net.ipv4.conf.default.rp_filter", v: "1"} # Enable Reverse Path Filtering
+  - {n: "net.ipv4.conf.all.log_martians", v: "0"} # Logs packets which we cannot reply to because there is no route for them. Helpful in exposing network misconfiguration but can result in DoS via log.
+  # ICMP Redirects are used to send routing information to other hosts. As a host itself does
+  # not act as a router (in a host only configuration), there is no need to send redirects. 
+  # An attacker could use a compromised host to send invalid ICMP redirects to other router
+  # devices in an attempt to corrupt routing and have users access a system set up by the
+  # attacker as opposed to a valid system.
+  - {n: "net.ipv4.conf.all.accept_redirects", v: "0"} # Do not accept IPv4 redirect requests
+  - {n: "net.ipv4.conf.all.secure_redirects", v: "0"}
+  - {n: "net.ipv4.conf.all.send_redirects", v: "0"}
+  - {n: "net.ipv4.conf.default.send_redirects", v: "0"}
+  - {n: "net.ipv4.conf.all.accept_source_route", v: "0"}
+  - {n: "net.ipv4.conf.default.accept_source_route", v: "0"}
+  - {n: "net.ipv4.conf.all.forwarding", v: "{{sysctl_ip_forwarding}}"}
+  # It is recommended that systems not accept router advertisements as they could be tricked
+  # into routing traffic to compromised machines. Setting hard routes within the system
+  # (usually a single default route to a trusted router) protects the system from bad routes.
+  - {n: "net.ipv6.conf.all.accept_ra", v: "1"} # Disable IPv6 route advertisement
+  - {n: "net.ipv6.conf.default.accept_ra", v: "1"} # Disable IPv6 route advertisement
+  - {n: "net.ipv6.conf.all.accept_redirects", v: "1"} # Do not accept IPv6 redirect requests
+  - {n: "net.ipv6.conf.all.forwarding", v: "{{sysctl_ip_forwarding}}"}
+  - {n: "net.ipv6.conf.all.disable_ipv6", v: "0"} # Disable IPv6. Bad idea as some things expect IPv6 to exist
+  # Kernel performance tunning
+  - {n: "net.ipv4.tcp_slow_start_after_idle", v: "0"} # this=1 improves performance
+  - {n: "net.ipv4.ip_local_port_range", v: "'10000 65000'"} # Increase the number of ephermeral IP ports. Services must bind on port 9999 or lower!
+  - {n: "net.ipv4.udp_rmem_min", v: "8192"} # Increase from the default of 4096
+  - {n: "net.ipv4.udp_wmem_min", v: "8192"} # Increase from the default of 4096
+  # Make room for more TIME_WAIT sockets due to more clients,
+  # and allow them to be reused if we run out of sockets
+  # Also increase the max packet backlog
+  - {n: "net.core.netdev_max_backlog", v: "50000"}
+  - {n: "net.ipv4.tcp_max_syn_backlog", v: "2000000"}
+  - {n: "net.ipv4.tcp_max_tw_buckets", v: "30000"}
+  - {n: "net.ipv4.tcp_tw_reuse", v: "1"}
+  - {n: "net.ipv4.tcp_fin_timeout", v: "10"}
+  # https://blog.cloudflare.com/path-mtu-discovery-in-practice/
+  - {n: "net.ipv4.tcp_mtu_probing", v: "1"}
+  - {n: "net.ipv4.tcp_base_mss", v: "1024"}
+  # Increase Linux autotuning TCP buffer limits
+  # Set max to 16MB for 1GE and 32M (33554432) or 54M (56623104) for 10GE
+  # Don't set tcp_mem itself! Let the kernel scale it based on RAM.
+  - {n: "net.core.rmem_max", v: "16777216"}
+  - {n: "net.core.wmem_max", v: "16777216"}
+  - {n: "net.core.rmem_default", v: "16777216"}
+  - {n: "net.core.wmem_default", v: "16777216"}
+  - {n: "net.core.optmem_max", v: "40960"}
+  - {n: "net.ipv4.tcp_rmem", v: "'4096 87380 16777216'"}
+  - {n: "net.ipv4.tcp_wmem", v: "'4096 65536 16777216'"}
+
+- name: Sysctl - other
+  sysctl: name={{item.n}} value={{item.v}} sysctl_file=/etc/sysctl.d/10-ansible-other.conf
+  with_items:
+  # I think this=0 disables 32-bit syscalls.
+  - {n: "abi.vsyscall32", v: "0"}
+  # Auto-reboot 10s after a kernel panic
+  - {n: "kernel.panic", v: "10"}
+  - {n: "kernel.dmesg_restrict", v: "1"}
+  # I dont know if this will cause any compatibility problems. Value "2" is more secure than value "1".
+  - {n: "kernel.kptr_restrict", v: "2"} 
+  - {n: "kernel.randomize_va_space", v: "2"}
+  # Discourages the kernel from swapping memory to disk, making delays (reading from swap) less likely
+  - {n: "vm.swappiness", v: "10"}
