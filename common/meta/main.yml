@@ -134,4 +134,4 @@ dependencies:
   # to this list.
 - common_real
 - ferm
-# -sysctl
+- sysctl
