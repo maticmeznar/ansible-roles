@@ -1,0 +1,9 @@
+---
+# handlers file for ferm
+
+- name: restart ferm
+  service: name=ferm state=restarted
+
+# alias reload=restart
+- name: reload ferm
+  service: name=ferm state=restarted

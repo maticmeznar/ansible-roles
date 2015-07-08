@@ -1,0 +1,60 @@
+# -*- shell-script -*-
+#
+#  Configuration file for ferm(1).
+#
+
+@include 'ferm.d/';
+
+table filter {
+    chain INPUT {
+        policy DROP;
+
+        # connection tracking
+        mod conntrack ctstate INVALID DROP;
+        mod conntrack ctstate (ESTABLISHED RELATED) ACCEPT;
+
+        # allow local packet
+        interface lo ACCEPT;
+
+        # respond to ping
+        proto icmp ACCEPT;
+
+        # allow SSH connections
+        proto tcp dport {{ferm_ssh_port}} mod comment comment ssh ACCEPT;
+
+        @include 'input4.d/';
+        REJECT;
+    }
+    
+    chain OUTPUT {
+        policy ACCEPT;
+    }
+    
+    chain FORWARD {
+        policy DROP;
+    }
+}
+
+# IPv6:
+domain ip6 {
+    table filter {
+        chain INPUT {
+            policy DROP;
+            
+            mod conntrack ctstate INVALID DROP;
+            mod conntrack ctstate (ESTABLISHED RELATED) ACCEPT;
+            
+            @include 'input6.d/';
+            
+            REJECT;
+        }
+    	
+        chain OUTPUT {
+            policy ACCEPT;
+    	}
+    	
+        chain FORWARD {
+    		policy DROP;
+        }
+    }
+}

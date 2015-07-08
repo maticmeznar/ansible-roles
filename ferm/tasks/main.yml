@@ -1,0 +1,23 @@
+---
+# tasks file for ferm
+
+- file: path=/etc/{{item}} state=directory owner=root mode=0770
+  with_items: 
+  - ["ferm", "ferm/input4.d", "ferm/input6.d", "ferm/ferm.d"]
+
+- template: src=ferm.conf.j2 dest=/etc/ferm/ferm.conf owner=root mode=0660
+  notify: restart ferm
+
+- name: Install ferm package on Debian OS family
+  apt: name={{ item }} state=present
+  with_items:
+    - [ 'ferm' ]
+  when: ansible_os_family == 'Debian'
+
+- name: Install ferm package on RedHat OS family
+  yum: name={{ item }} state=present
+  with_items:
+    - [ 'ferm' ]
+  when: ansible_os_family == 'RedHat'
+
+- service: name=ferm enabled=yes
