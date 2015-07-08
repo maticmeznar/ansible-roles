@@ -45,7 +45,8 @@
 - copy: dest=/etc/nginx/cert/ssl-private.pem src={{nginx_ssl_cert_private_file}} owner=root group=root mode=0660
   
 # Fixes "avc:  denied  { execmem }" SELinux deny message
-- seboolean: name={{item}} persistent=yes state=yes
+- name: Disable SELinux restrictions that prevent Nginx from working
+  seboolean: name={{item}} persistent=yes state=yes
   with_items:
   - ['httpd_setrlimit', 'httpd_execmem', 'httpd_can_sendmail', 'httpd_enable_homedirs']
   when: ansible_selinux == true
@@ -53,3 +54,6 @@
 
 - name: start the nginx service
   service: name=nginx state=started enabled=yes
+
+- copy: content="proto tcp dport (80 443) mod comment comment nginx ACCEPT;" dest=/etc/ferm/input4.d/10-nginx.conf
+  notify: restart ferm
