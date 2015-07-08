@@ -1,2 +1,5 @@
 ---
 # vars file for nginx
+
+nginx_php_fastcgi_pass_path_redhat: "unix:/run/php-fpm/pool-www.sock"
+nginx_php_fastcgi_pass_path_debian: "unix:/run/php5-fpm.sock"

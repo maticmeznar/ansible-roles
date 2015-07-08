@@ -21,16 +21,16 @@
 
 - template: dest=/etc/nginx/conf.d/{{item}}.conf owner=root mode=0664 src={{item}}.conf.j2
   with_items:
-  - [ 'ssl', 'php', 'expire']
+  - [ 'ssl', 'expire']
+  notify: reload nginx
+
+- template: dest=/etc/nginx/conf.d/php.conf owner=root group=root mode=0664 src=php.conf.j2
+  when: nginx_php_enabled == "yes"
   notify: reload nginx
 
 - copy: dest=/etc/nginx/conf.d/{{item}} owner=root mode=0664 src={{item}}
   with_items:
   - [ 'common.conf', 'tryfiles.conf', 'dhparam_2048.pem', 'dhparam_4096.pem' ]
-  notify: reload nginx
-
-- template: dest=/etc/nginx/conf.d/php.conf owner=root group=root mode=0664 src=php.conf.j2
-  when: nginx_php_enabled == "yes"
   notify: reload nginx
 
 - template: dest=/etc/nginx/conf.d/expire.conf owner=root group=root mode=0664 src=expire.conf.j2
@@ -48,9 +48,8 @@
 - name: Disable SELinux restrictions that prevent Nginx from working
   seboolean: name={{item}} persistent=yes state=yes
   with_items:
-  - ['httpd_setrlimit', 'httpd_execmem', 'httpd_can_sendmail', 'httpd_enable_homedirs']
+  - ['httpd_setrlimit', 'httpd_execmem', 'httpd_enable_homedirs']
   when: ansible_selinux == true
-  tags: selinux
 
 - name: start the nginx service
   service: name=nginx state=started enabled=yes

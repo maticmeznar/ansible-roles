@@ -1,5 +1,13 @@
 location ~ \.php$ {
+    
+    {% if nginx_php_fastcgi_pass_path == "auto" and ansible_os_family == "Debian" %}
+    fastcgi_pass {{nginx_php_fastcgi_pass_path_debian}};
+    {% elif nginx_php_fastcgi_pass_path == "auto" and ansible_os_family == "RedHat" %}
+    fastcgi_pass {{nginx_php_fastcgi_pass_path_redhat}};
+    {% else %}
     fastcgi_pass {{nginx_php_fastcgi_pass_path}};
+    {% endif %}
+    
     ## "fastcgi_params" don't work, use fastcgi.conf!
     # include fastcgi_params;
     include fastcgi.conf;

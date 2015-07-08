@@ -8,7 +8,7 @@ nginx_static_file_expire_enabled: "no"
 nginx_static_file_expire_time: "1h"
 nginx_static_file_expere_extensions: "css|js|ico|gif|jpg|png|txt"
 nginx_php_enabled: "yes"
-nginx_php_fastcgi_pass_path: "unix:/run/php-fpm/pool-www.sock"
+nginx_php_fastcgi_pass_path: "auto"
 nginx_ssl_enabled: "on"
 nginx_ssl_dhparam_bits: 2048 # dhparam should be the same strength as your certificate (2048).
 nginx_ssl_buffer_size: "4k" # Default = 16k; Value reduced too minimize Time To First Byte.
