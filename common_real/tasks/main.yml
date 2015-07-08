@@ -1,0 +1,30 @@
+---
+# tasks file for common
+
+- include: debian.yml
+  when: ansible_os_family == 'Debian'
+
+- include: redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: Disable requiretty in sudoers
+  lineinfile: dest=/etc/sudoers regexp="{{item.regex}}" line="{{item.line}}"
+  with_items:
+  # !!! Regex must match the existing line and the new one, otherwise lineinfile
+  # !!! will keep adding lines at the end of the file each time it is executed
+  - {regex: '^Defaults\s*!?requiretty$', line: "Defaults    !requiretty"}
+
+- name: MOTD and issue
+  copy: dest={{item.dest}} owner=root mode=0664 src={{item.source}}
+  with_items:
+  - {source: 'motd.txt', dest: /etc/motd}
+  - {source: 'issue.txt', dest: /etc/issue}
+  - {source: 'issue.txt', dest: /etc/issue.net}
+
+- copy: dest=/etc/security/limits.d/99-ansible.conf owner=root mode=0664 src=limits.conf
+
+- kernel_blacklist: name={{item}} state=present
+  with_items:
+  - ["sctp", "dccp", "rds", "tipc"]
+
+- mount: name=/tmp fstype=tmpfs state=present opts=nodev,nosuid src=none

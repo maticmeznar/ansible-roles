@@ -1,0 +1,41 @@
+---
+# vars file for common
+
+common_essential_packages:
+- git
+- ipset
+- iptables
+- less
+- nano
+- net-tools
+- sudo
+- unzip
+
+common_extra_packages:
+- bash-completion
+- iotop
+- ioping
+- lsof
+# - pciutils
+- rsync
+- sysstat
+- tcpdump
+# - usbutils
+# - whois
+
+debian_essential_packages: 
+- iptables-persistent
+- iputils-ping
+
+debian_extra_packages:
+- dnsutils
+
+redhat_essential_packages: 
+- deltarpm
+- iptables-services
+- policycoreutils-python
+- selinux-policy
+- selinux-policy-targeted
+
+redhat_extra_packages:
+- bind-utils

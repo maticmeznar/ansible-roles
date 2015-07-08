@@ -1,0 +1,5 @@
+---
+# handlers file for common
+
+- name: reload systemd
+  shell: systemctl --system daemon-reload

@@ -1,0 +1,5 @@
+---
+# defaults file for common
+
+common_install_extras: "no"
+common_automatic_updates: "yes"

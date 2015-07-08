@@ -1,0 +1,77 @@
+---
+
+- name: Update all existing packages on RedHat
+  yum: name=* state=latest update_cache=yes
+
+# We have to enable EPEL before installing
+# "common" packages because they depend on it.
+- name: Enable EPEL repository on RedHat OS
+  yum: name=epel-release state=present
+
+- name: Install common essential packages on RedHat OS family
+  yum: name={{ item }} state=present
+  with_items:
+  - "{{common_essential_packages}}"
+  - "{{redhat_essential_packages}}"
+
+- name: Install common extra packages on RedHat OS family
+  yum: name={{ item }} state=present
+  with_items:
+  - "{{common_extra_packages}}"
+  - "{{redhat_extra_packages}}"
+  when: common_install_extras == "yes"
+
+# Requires "policycoreutils-python" to be installed first
+- name: Enable SELinux
+  selinux: policy=targeted state=enforcing
+
+- name: Disable unnecessary services
+  service: name={{item.name}} enabled={{item.enabled}} state={{item.state}}
+  with_items:
+  - {name: 'firewalld', enabled: 'no', state: 'stopped'}
+  - {name: 'iptables', enabled: 'yes', state: 'started'}
+  - {name: 'ip6tables', enabled: 'yes', state: 'started'}
+  - {name: 'tuned', enabled: 'no', state: 'stopped'}
+  - {name: 'iprdump', enabled: 'no', state: 'stopped'}
+  - {name: 'iprinit', enabled: 'no', state: 'stopped'}
+  - {name: 'iprupdate', enabled: 'no', state: 'stopped'}
+  - {name: 'avahi-daemon', enabled: 'no', state: 'stopped'}
+  - {name: 'polkit', enabled: 'no', state: 'stopped'}
+  ignore_errors: yes
+
+- stat: path=/etc/lvm/lvm.conf
+  register: lvm_conf
+
+- name: Disable lvmetad service
+  lineinfile: dest=/etc/lvm/lvm.conf regexp="{{item.regex}}" line="{{item.line}}"
+  with_items:
+  # !!! Regex must match the existing line and the new one, otherwise lineinfile
+  # !!! will keep adding lines at the end of the file each time it is executed
+  - {regex: '^\s*use_lvmetad = [0,1]$', line: "    use_lvmetad = 0"}
+  when: lvm_conf.stat.exists == true
+
+
+- name: Uninstall useless packages
+  yum: name={{item}} state=present
+  with_items:
+    - ["iprutils", "tuned"]
+
+- name: yum - configure yum
+  ini_file: dest=/etc/yum.conf section=main option={{item.option}} value={{item.value}} backup=yes
+  with_items:
+  - {option: "installonly_limit", value: "2"} # Only 2 kernels will be installed at the same time
+  - {option: "gpgcheck", value: "1"}
+  - {option: "exclude", value: "*.i686"} # Excludes i686 packages from yum
+  - {option: "metadata_expire", value: "90m"}
+
+- name: Install package yum-cron for automatic updating
+  yum: name=yum-cron state=present
+  when: common_automatic_updates == "yes"
+
+- name: yum - enable and configure automatic updates
+  ini_file: dest={{item.file}} section={{item.section}} option={{item.option}} value={{item.value}} backup=yes
+  with_items:
+  - {file: "/etc/yum/yum-cron.conf", section: "commands", option: "apply_updates", value: "yes"}
+  - {file: "/etc/yum/yum-cron.conf", section: "commands", option: "random_sleep", value: "15"}
+  - {file: "/etc/yum/yum-cron-hourly.conf", section: "commands", option: "random_sleep", value: "0"}
+  when: common_automatic_updates == "yes"
