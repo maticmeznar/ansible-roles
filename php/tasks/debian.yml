@@ -1,0 +1,14 @@
+---
+
+- name: Install PHP and support packages
+  apt: name={{ item }} state=present
+  with_items: "{{php_debian_packages}}"
+  when: ansible_os_family == 'Debian'
+
+- copy: dest=/etc/php5/{{item}}/php.ini owner=root mode=0664 src=debian/php.ini
+  with_items:
+  - ['fpm', 'cli']
+  notify: reload php5-fpm
+
+- name: start the php5-fpm service
+  service: name=php5-fpm state=started enabled=yes

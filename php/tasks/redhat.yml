@@ -1,0 +1,23 @@
+---
+
+- name: Install PHP and support packages
+  yum: name={{ item }} state=present
+  with_items: "{{php_redhat_packages}}"
+  when: ansible_os_family == 'RedHat'
+
+- copy: dest=/etc/php.d/{{item}} owner=root group=root mode=0664 src=redhat/{{item}} backup=no
+  with_items:
+  - ['apcu.ini', 'z-memcached.ini']
+  notify: reload php-fpm
+
+- copy: dest=/etc/php-fpm.conf owner=root group=root mode=0664 src=redhat/php-fpm.conf backup=no
+  notify: reload php-fpm
+
+- copy: dest=/etc/php.ini owner=root group=root mode=0664 src=redhat/php.ini
+  notify: reload php-fpm
+
+- synchronize: dest=/etc/php-fpm.d/ src=roles/php/redhat/files/conf.d/ recursive=yes delete=yes owner=no group=no
+  notify: reload php-fpm
+
+- name: start the php-fpm service
+  service: name=php-fpm state=started enabled=yes
