@@ -1,0 +1,7 @@
+---
+# defaults file for ssh
+
+ssh_fw_allowed_nets: ['0.0.0.0/0']
+ssh_port: 22
+ssh_allow_root: "yes"
+ssh_password_authentication: "yes"

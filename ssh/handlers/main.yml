@@ -1,0 +1,15 @@
+---
+# handlers file for ssh
+
+- name: clear sshd selinux
+  shell: semanage port -t ssh_port_t -D -N
+
+- name: set sshd selinux
+  shell: semanage port -a -t ssh_port_t -p tcp {{ sshd_port }}
+  ignore_errors: yes
+
+- name: restart sshd
+  service: name=sshd state=restarted
+
+- name: reload sshd
+  service: name=sshd state=reloaded

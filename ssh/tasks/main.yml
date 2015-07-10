@@ -1,0 +1,28 @@
+---
+# tasks file for ssh
+
+- name: Install openssh package
+  yum: name=openssh-server state=present
+  when: ansible_os_family == "RedHat"
+
+- name: Install openssh package
+  apt: name=openssh-server state=present
+  when: ansible_os_family == "Debian"
+
+- name: Copy the server configuration file
+  template: src=sshd_config.j2 dest=/etc/ssh/sshd_config owner=root mode=0660
+  notify: restart sshd
+
+- name: Copy the client configuration file
+  template: src=ssh_config.j2 dest=/etc/ssh/ssh_config owner=root mode=0664
+
+- copy: content="proto tcp dport {{ssh_port}} mod comment comment ssh ACCEPT;" dest=/etc/ferm/input4.d/10-ssh.conf
+  notify: restart ferm
+
+- name: Reconfigure SELinux to allow for alternative port {{ssh_port}}
+  shell: semanage port -a -t ssh_port_t -p tcp {{ ssh_port }}
+  when: ssh_port != ssh_port_default and ansible_selinux == true
+  ignore_errors: yes
+
+- name: start the sshd service
+  service: name=sshd state=started enabled=yes
