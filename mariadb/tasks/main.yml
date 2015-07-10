@@ -1,0 +1,13 @@
+---
+
+- include: debian.yml
+  when: ansible_os_family == 'Debian'
+
+- include: redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+- copy: content="proto tcp saddr {{item}} dport 3306 mod comment comment mariadb ACCEPT;" dest=/etc/ferm/input4.d/10-mariadb.conf
+  notify: restart ferm
+  with_items:
+  - "{{mariadb_fw_allowed_nets}}"
+  when: mariadb_bind_address != "127.0.0.1"

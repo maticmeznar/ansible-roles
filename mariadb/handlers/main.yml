@@ -1,0 +1,15 @@
+---
+# handlers file for mariadb
+
+- name: restart mariadb-redhat
+  service: name=mariadb state=restarted
+
+- name: restart mariadb-debian
+  service: name=mysql state=restarted
+
+# mariadb.service unit file does not support reload
+
+# Equivalent to running "mysql_secure_installation"
+# Sets the root password and removes test users and databases
+- name: secure_mariadb
+  script: mysql_secure.sh {{mariadb_root_pw}} creates=/etc/ansible_mariadb_secured
