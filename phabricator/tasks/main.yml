@@ -1,0 +1,58 @@
+---
+# tasks file for phabricator
+
+- user: name={{phabricator_vcs_user}} state=present shell=/bin/bash 
+        password=$6$8Tl4k01o7/KnZil$shGH17ubxYPtZP0WyPfECRDxYDgw6UrH2KWHVBwptJst.KFRJqPjAQ7R7BBpip1wHj6nMJ896mRtol5T3Rza91
+- user: name={{phabricator_daemon_user}} state=present
+
+- template: dest=/etc/sudoers.d/phabricator owner=root mode=0440 src=sudoers_phabricator.j2
+
+- template: dest=/usr/bin/phabricator-ssh-hook.sh owner=root mode=0755 src=phabricator-ssh-hook.sh.j2
+- template: dest=/etc/ssh/sshd_config.phabricator owner=root mode=0640 src=sshd_config.phabricator.j2
+
+- git: repo={{item.r}} dest={{phabricator_path}}/{{item.d}} depth=1
+  with_items:
+  - {r: "https://github.com/phacility/libphutil.git", d: "libphutil"}
+  - {r: "https://github.com/phacility/arcanist.git", d: "arcanist"}
+  - {r: "https://github.com/phacility/phabricator.git", d: "phabricator"}
+
+- template: src=nginx_vhost.conf.j2
+            dest=/etc/nginx/vhost.d/enabled-phabricator.conf
+            owner=root mode=0664
+  notify: reload nginx
+
+- template: src=phabricator-phb.service.j2
+            dest=/etc/systemd/system/phabricator-phd.service
+            owner=root mode=0664
+  notify: ["reload systemd", "restart phabricator-phd"]
+
+- apt: name=python-pip state=present
+  when: ansible_os_family == "Debian"
+
+- yum: name=python-pip state=present
+  when: ansible_os_family == "RedHat"
+
+- pip: name=Pygments state=present
+
+- file: path={{phabricator_file_storage_path}} 
+        state=directory owner={{phabricator_user}} mode=0755
+
+- file: path={{phabricator_repo_path}}
+        state=directory owner={{phabricator_daemon_user}} mode=0755
+
+# - mysql_user: name={{phabricator_sql_user}} 
+#               priv=*.*:ALL state=present password={{phabricator_sql_pw}}
+#               login_user=root login_password={{mariadb_root_pw}}
+
+- shell: /{{phabricator_config}} set mysql.host {{phabricator_sql_host}}
+- shell: /{{phabricator_config}} set mysql.user {{phabricator_sql_user}}
+- shell: /{{phabricator_config}} set mysql.pass {{phabricator_sql_pw}}
+- shell: /{{phabricator_path}}/phabricator/bin/storage upgrade --force
+- shell: /{{phabricator_config}} set phabricator.base-uri {{phabricator_uri}}
+- shell: /{{phabricator_config}} set storage.local-disk.path "{{phabricator_file_storage_path}}"
+- shell: /{{phabricator_config}} set repository.default-local-path "{{phabricator_repo_path}}"
+- shell: /{{phabricator_config}} set security.alternate-file-domain {{phabricator_file_domain_uri}}
+- shell: /{{phabricator_config}} set phd.user {{phabricator_daemon_user}}
+- shell: /{{phabricator_config}} set diffusion.ssh-user {{phabricator_vcs_user}}
+ 
+- service: name=phabricator-phd state=started enabled=yes

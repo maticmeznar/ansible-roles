@@ -1,0 +1,17 @@
+[Unit]
+Description=phabricator-phd
+After=network.target
+Requires=mysql.service
+Before=nginx.service
+
+[Service]
+User={{phabricator_daemon_user}}
+Group={{phabricator_daemon_user}}
+Type=oneshot
+Environment="PATH=/sbin:/usr/sbin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin"
+ExecStart={{phabricator_path}}/phabricator/bin/phd start
+ExecStop={{phabricator_path}}/phabricator/bin/phd stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

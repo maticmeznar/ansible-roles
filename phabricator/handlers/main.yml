@@ -1,0 +1,5 @@
+---
+# handlers file for phabricator
+
+- name: restart phabricator-phd
+  service: name=phabricator-phd state=restarted

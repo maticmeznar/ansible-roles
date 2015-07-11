@@ -1,0 +1,17 @@
+---
+# defaults file for phabricator
+
+phabricator_domain_name: "phab.example.com"
+phabricator_uri: "http://{{phabricator_domain_name}}/"
+phabricator_file_domain_name: "phabfiles.something.else"
+phabricator_file_domain_uri: "http://{{phabricator_file_domain_name}}/"
+phabricator_user: "www-data"
+phabricator_path: "/opt/phab"
+phabricator_file_storage_path: "{{phabricator_path}}/filestorage"
+phabricator_repo_path: "{{phabricator_path}}/repo"
+phabricator_config: "{{phabricator_path}}/phabricator/bin/config"
+phabricator_sql_user: "phabricator"
+phabricator_sql_pw: "eetathik4geeD8ioQuohrahPaiphei3e"
+phabricator_sql_host: "localhost"
+phabricator_vcs_user: "git"
+phabricator_daemon_user: "phd"
