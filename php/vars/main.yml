@@ -3,7 +3,7 @@
 
 php_debian_packages:
 - ['php5', 'php5-cli', 'php5-fpm', 'php5-dev', 'libpcre3-dev','php5-imagick']
-- ['php5-memcached', 'php5-mysqlnd', 'php5-gd', 'php5-mcrypt', 'php5-apcu']
+- ['php5-memcached', 'php5-mysqlnd', 'php5-gd', 'php5-mcrypt', 'php5-apcu', 'php5-curl']
 
 php_redhat_packages: 
 - [ 'php', 'php-cli', 'php-fpm', 'php-devel', 'pcre-devel', 'php-xml', 'php-pecl-imagick' ]
