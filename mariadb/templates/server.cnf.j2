@@ -26,7 +26,7 @@ skip-name-resolve
 # https://mariadb.com/kb/en/mariadb/sql_mode/
 # Adding "ONLY_FULL_GROUP_BY" to the list below will cause problems for PhpMyAdmin
 # sql-mode                       = STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE
-sql_mode					   = NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
+sql_mode					   = {{mariadb_sql_mode}}
 sysdate-is-now                 = 1
 innodb                         = FORCE
 innodb-strict-mode             = 1
@@ -59,7 +59,9 @@ slow-query-log-file            = /var/lib/mysql/mysql-slow.log
 # FULL-TEXT SEARCH #
 ft_boolean_syntax	       = ' |-><()~*:""&^'
 ft_min_word_len                = 3
-
+{% if mariadb_ft_stopword_file != "auto" %}
+ft_stopword_file={{mariadb_ft_stopword_file}}
+{% endif %}
 
 # this is only for embedded server
 [embedded]

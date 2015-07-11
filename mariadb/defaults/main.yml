@@ -5,3 +5,5 @@ mariadb_root_pw: 'Paop7kohThei3Baiz2J2JQD4RtWpBDu1'
 mariadb_fw_allowed_nets: ['0.0.0.0/0']
 mariadb_bind_address: "127.0.0.1"
 mariadb_innodb_buffer_pool_size: "200M"
+mariadb_sql_mode: "NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES"
+mariadb_ft_stopword_file: "auto"

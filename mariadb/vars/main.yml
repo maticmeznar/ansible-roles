@@ -1,4 +1,6 @@
 ---
 # vars file for mariadb
 
-mariadb_package_name: "mariadb-server"
+mariadb_package_names:
+- mariadb-server
+- python-mysqldb
